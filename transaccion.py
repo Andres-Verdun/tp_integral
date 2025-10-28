@@ -1,13 +1,18 @@
 from datetime import datetime
-from typing import List, Tuple
 
 
 class Transaccion:
     def __init__(self, tipo: str, monto: float):
-        self.__tipo = tipo
-        self.__monto = float(monto)
+        # Validacion antes de asignar -----
+        monto = float(monto)
+        if monto <= 0:
+            raise ValueError("El monto debe ser mayor que cero.")
+
+        self.__tipo = str(tipo)
+        self.__monto = monto
         self.__fecha = datetime.now()
 
+    # Getters y setters ----------------------------------------------------------
     def get_tipo(self) -> str:
         return self.__tipo
 
@@ -18,16 +23,18 @@ class Transaccion:
         return self.__monto
 
     def set_monto(self, monto: float) -> None:
-        self.__monto = float(monto)
+        monto = float(monto)
         if monto <= 0:
             raise ValueError("El monto debe ser mayor que cero.")
-        self.__monto = float(monto)
+        self.__monto = monto
 
     def get_fecha(self) -> datetime:
         return self.__fecha
 
     def set_fecha(self, fecha: datetime) -> None:
-        self.__fecha = datetime(fecha)
+        if not isinstance(fecha, datetime):
+            raise ValueError("La fecha debe ser un objeto datetime válido.")
+        self.__fecha = fecha
 
     # Polimorfismo: cada subclase define cómo se aplica --------------------
     def aplicar(self, cuenta) -> None:
@@ -60,3 +67,5 @@ class Retiro(Transaccion):
         # Aca debe verificar los fondos antes de retirar
         if self.get_monto() > cuenta.get_saldo():
             raise ValueError("Fondos insuficientes.")
+        nuevo = cuenta.get_saldo() - self.get_monto()
+        cuenta.set_saldo(nuevo)
