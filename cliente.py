@@ -1,5 +1,5 @@
 class Cliente:
-    def _init_(self, nombre, apellido, dni):
+    def __init__(self, nombre, apellido, dni):
         self.__nombre = nombre
         self.__apellido = apellido
         self.__dni = dni
@@ -25,16 +25,12 @@ class Cliente:
 
     def get_dni(self):
         return self.__dni
-        if not nuevo_dni.strip():
-            raise ValueError("El DNI no puede estar vacío.")
-        else:
-            self.__dni = nuevo_dni
 
     def set_dni(self, nuevo_dni):
-        if len(str(nuevo_dni)) < 7:
-            print("El DNI debe tener al menos 7 caracteres.")
-        else:
-            self.__dni = nuevo_dni
+        nuevo_dni = str(nuevo_dni).strip()
+        if not nuevo_dni or len(nuevo_dni) < 7 or not nuevo_dni.isdigit():
+            raise ValueError("El DNI debe ser numérico y tener al menos 7 dígitos.")
+        self.__dni = nuevo_dni
 
     # Mostrar datos del cliente ------------------------------------------------
     def mostrar_datos(self):
