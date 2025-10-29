@@ -164,6 +164,28 @@ def mostrar_transacciones():
     print("")
 
 
+def depositar_en_cuenta_por_parametros(numero_cuenta: int, monto: float):
+    """
+    Deposita dinero en una cuenta SIN usar input().
+    Devuelve una tupla (ok: bool, mensaje: str).
+    Pensada para tests con pytest.
+    """
+    try:
+        cta = buscar_cuenta_por_numero(int(numero_cuenta))
+        if not cta:
+            return (False, "Cuenta no encontrada.")
+
+        t = Deposito(float(monto))  # valida monto > 0 (puede lanzar ValueError)
+        t.aplicar(cta)  # setea el nuevo saldo
+        transacciones.append(t)  # cumple 'arreglos en memoria'
+        return (True, f"Depósito exitoso. Saldo: ${cta.get_saldo():.2f}")
+
+    except ValueError as e:
+        return (False, f"Error: {e}")
+    except Exception as e:
+        return (False, f"Error inesperado: {e}")
+
+
 def menu():
     while True:
         print(
@@ -177,7 +199,8 @@ def menu():
 4️⃣ Exportar clientes a PDF
 5️⃣ Transacciones
 6️⃣ Ver historial
-7️⃣ Salir
+7️⃣ Depósito Parámetros
+8️⃣ Salir
 """
         )
 
@@ -195,9 +218,18 @@ def menu():
             realizar_transaccion()
         elif opcion == "6":
             mostrar_transacciones()
-        elif opcion == "7":
+        elif opcion == "8":
             print("\n👋 Saliendo del sistema bancario...\n")
             break
+        elif opcion == "7":
+            try:
+                numero = int(input("Número de cuenta destino: "))
+                monto = float(input("Monto a depositar: "))
+                ok, msg = depositar_en_cuenta_por_parametros(numero, monto)
+                print(("✅ " if ok else "⚠️ ") + msg)
+            except ValueError as e:
+                print(f"⚠️ Error: {e}")
+                print("\n👋 Depositar cuenta Parametros...\n")
         else:
             print("\n❌ Opción inválida. Probá otra vez.\n")
 
