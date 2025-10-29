@@ -14,8 +14,20 @@ def crear_cliente():
     print("\n🆕 Crear nuevo cliente")
     try:
         nombre = input("Nombre: ").strip()
+        while not nombre.strip():
+            nombre = input("Nombre: ").strip()
+            if not nombre:
+                print("⚠️ El nombre no puede estar vacío. Intentá de nuevo.")
         apellido = input("Apellido: ").strip()
+        while not apellido.strip():
+            apellido = input("Apellido: ").strip()
+            if not apellido:
+                print("⚠️ El apellido no puede estar vacío. Intentá de nuevo.")
         dni = input("DNI: ").strip()
+        while not dni.strip():
+            dni = input("DNI: ").strip()
+            if not dni:
+                print("⚠️ El DNI no puede estar vacío. Intentá de nuevo.")
         if not nombre or not apellido or not dni:
             raise ValueError("Todos los campos son obligatorios.")
 
