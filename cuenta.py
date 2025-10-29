@@ -4,8 +4,6 @@ class Cuenta:
         self.__cliente = cliente
         self.__saldo = saldo_inicial
 
-
-
     # ======= Getters y Setters =======
     def get_numero_cuenta(self):
         return self.__numero_cuenta
@@ -42,8 +40,8 @@ class Cuenta:
         except ValueError as e:
             print(f"Error: {e}")
 
+            # Mostrar datos
 
-              # Mostrar datos
     def mostrar_datos(self):
         print("\n=== DATOS DEL CLIENTE ===")
         print(f"Nombre: {self.__nombre}")

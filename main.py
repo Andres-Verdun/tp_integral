@@ -1,6 +1,6 @@
 from cliente import Cliente
 from cuenta import Cuenta
-from transaccion import Transaccion
+from transaccion import Deposito, Retiro  # usamos subclases concretas
 from fpdf import FPDF
 
 clientes = []
@@ -12,19 +12,31 @@ contador_cuentas = 1000
 def crear_cliente():
     global contador_cuentas
     print("\n🆕 Crear nuevo cliente")
-    nombre = input("Nombre: ")
-    apellido = input("Apellido: ")
-    dni = input("DNI: ")
+    try:
+        nombre = input("Nombre: ").strip()
+        apellido = input("Apellido: ").strip()
+        dni = input("DNI: ").strip()
+        if not nombre or not apellido or not dni:
+            raise ValueError("Todos los campos son obligatorios.")
 
-    cliente = Cliente(nombre, apellido, dni)
-    clientes.append(cliente)
+        cliente = Cliente(nombre, apellido, dni)
+        clientes.append(cliente)
 
-    contador_cuentas += 1
-    cuenta = Cuenta(numero_cuenta=contador_cuentas, cliente=cliente, saldo_inicial=0)
-    cuentas.append(cuenta)
+        contador_cuentas += 1
+        cuenta = Cuenta(
+            numero_cuenta=contador_cuentas, cliente=cliente, saldo_inicial=0
+        )
+        cuentas.append(cuenta)
 
-    print(f"\n✅ Cliente y cuenta creados con éxito.")
-    print(f"Cuenta Nº {cuenta.numero_cuenta} asociada a {cliente.nombre} {cliente.apellido}.\n")
+        print("\n✅ Cliente y cuenta creados con éxito.")
+        print(
+            f"Cuenta Nº {cuenta.get_numero_cuenta()} asociada a "
+            f"{cliente.get_nombre()} {cliente.get_apellido()}.\n"
+        )
+    except ValueError as e:
+        print(f"⚠️ Error: {e}")
+    except Exception as e:
+        print(f"❌ Error inesperado: {e}")
 
 
 def listar_clientes():
@@ -33,7 +45,7 @@ def listar_clientes():
         return
     print("\n📋 Lista de clientes:")
     for i, c in enumerate(clientes, start=1):
-        print(f"{i}. {c}")
+        print(f"{i}. {c.get_apellido()}, {c.get_nombre()} (DNI: {c.get_dni()})")
     print("")
 
 
@@ -43,83 +55,103 @@ def listar_cuentas():
         return
     print("\n🏦 Lista de cuentas:")
     for c in cuentas:
-        print(c)
+        cli = c.get_cliente()
+        print(
+            f"N° {c.get_numero_cuenta()} | Titular: {cli.get_apellido()}, {cli.get_nombre()} | Saldo: ${c.get_saldo():.2f}"
+        )
     print("")
 
 
 def exportar_pdf():
-    if not clientes:
-        print("\n⚠️ No hay clientes para exportar.\n")
+    if not cuentas:
+        print("\n⚠️ No hay cuentas para exportar.\n")
         return
 
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=14)
-    pdf.cell(200, 10, txt="📋 Lista de Clientes del Banco", ln=True, align="C")
+    try:
+        pdf = FPDF()
+        pdf.add_page()
 
-    pdf.set_font("Arial", size=12)
-    for c in clientes:
-        pdf.cell(200, 10, txt=f"{c.nombre} {c.apellido} - DNI: {c.dni}", ln=True)
+        # Título
+        pdf.set_font("Helvetica", style="B", size=14)
+        pdf.cell(
+            w=0,
+            h=10,
+            text="Lista de Cuentas del Banco",
+            new_y="NEXT",
+            new_x="LMARGIN",
+            align="C",
+        )
 
-    pdf.output("clientes_banco.pdf")
-    print("\n📄 Archivo 'clientes_banco.pdf' generado con éxito.\n")
+        # Cuerpo
+        pdf.set_font("Helvetica", size=12)
+        for cuenta in cuentas:  # <-- iteramos CUENTAS
+            cli = cuenta.get_cliente()  # <-- obtenemos el Cliente de esa cuenta
+            linea = (
+                f"{cli.get_nombre()} {cli.get_apellido()} "
+                f"- DNI: {cli.get_dni()} "
+                f"- Cuenta N°: {cuenta.get_numero_cuenta()} "
+                f"- Saldo: ${cuenta.get_saldo():.2f}"
+            )
+            pdf.cell(w=0, h=8, text=linea, new_y="NEXT", new_x="LMARGIN")
+
+        pdf.output("cuentas_banco.pdf")
+        print("\n📄 Archivo 'cuentas_banco.pdf' generado con éxito.\n")
+
+    except Exception as e:
+        print(f"❌ No se pudo generar el PDF: {e}")
 
 
 def buscar_cuenta_por_numero(numero):
     for c in cuentas:
-        if c.numero_cuenta == numero:
+        if c.get_numero_cuenta() == numero:
             return c
     return None
 
 
 def realizar_transaccion():
-    print("""
+    print(
+        """
 ============================
 💸 TRANSACCIONES
 ============================
 1️⃣ Depósito
 2️⃣ Retiro
-3️⃣ Transferencia
 ============================
-""")
-    opcion = input("Seleccioná una opción: ")
+"""
+    )
+    opcion = input("Seleccioná una opción: ").strip()
 
-    if opcion == "1":
-        numero = int(input("Número de cuenta destino: "))
-        cuenta = buscar_cuenta_por_numero(numero)
-        if not cuenta:
-            print("❌ Cuenta no encontrada.")
-            return
-        monto = float(input("Monto a depositar: "))
-        print(cuenta.depositar(monto))
-        transacciones.append(Transaccion("depósito", monto, destino=cuenta))
+    try:
+        if opcion == "1":
+            numero = int(input("Número de cuenta destino: "))
+            cuenta = buscar_cuenta_por_numero(numero)
+            if not cuenta:
+                print("❌ Cuenta no encontrada.")
+                return
+            monto = float(input("Monto a depositar: "))
+            t = Deposito(monto)  # valida monto > 0
+            t.aplicar(cuenta)  # usa get_saldo/set_saldo de Cuenta
+            transacciones.append(t)  # arreglo en memoria (consigna)
+            print(f"✅ Depósito exitoso. Saldo: ${cuenta.get_saldo():.2f}")
 
-    elif opcion == "2":
-        numero = int(input("Número de cuenta origen: "))
-        cuenta = buscar_cuenta_por_numero(numero)
-        if not cuenta:
-            print("❌ Cuenta no encontrada.")
-            return
-        monto = float(input("Monto a retirar: "))
-        print(cuenta.retirar(monto))
-        transacciones.append(Transaccion("retiro", monto, origen=cuenta))
+        elif opcion == "2":
+            numero = int(input("Número de cuenta: "))
+            cuenta = buscar_cuenta_por_numero(numero)
+            if not cuenta:
+                print("❌ Cuenta no encontrada.")
+                return
+            monto = float(input("Monto a retirar: "))
+            t = Retiro(monto)  # valida monto > 0
+            t.aplicar(cuenta)  # puede lanzar 'Fondos insuficientes'
+            transacciones.append(t)
+            print(f"✅ Retiro exitoso. Saldo: ${cuenta.get_saldo():.2f}")
 
-    elif opcion == "3":
-        origen_num = int(input("Cuenta origen: "))
-        destino_num = int(input("Cuenta destino: "))
-        monto = float(input("Monto a transferir: "))
-
-        origen = buscar_cuenta_por_numero(origen_num)
-        destino = buscar_cuenta_por_numero(destino_num)
-
-        if not origen or not destino:
-            print("❌ Alguna de las cuentas no existe.")
-            return
-
-        print(origen.transferir(destino, monto))
-        transacciones.append(Transaccion("transferencia", monto, origen=origen, destino=destino))
-    else:
-        print("❌ Opción inválida.")
+        else:
+            print("❌ Opción inválida.")
+    except ValueError as e:
+        print(f"⚠️ Error: {e}")
+    except Exception as e:
+        print(f"❌ Error inesperado: {e}")
 
 
 def mostrar_transacciones():
@@ -134,7 +166,8 @@ def mostrar_transacciones():
 
 def menu():
     while True:
-        print("""
+        print(
+            """
 =============================
 🏦 BANCO INTERACTIVO
 =============================
@@ -145,9 +178,10 @@ def menu():
 5️⃣ Transacciones
 6️⃣ Ver historial
 7️⃣ Salir
-""")
+"""
+        )
 
-        opcion = input("Seleccioná una opción: ")
+        opcion = input("Seleccioná una opción: ").strip()
 
         if opcion == "1":
             crear_cliente()
@@ -168,6 +202,5 @@ def menu():
             print("\n❌ Opción inválida. Probá otra vez.\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     menu()
-
